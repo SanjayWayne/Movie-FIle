@@ -4,7 +4,7 @@ from pyrogram.enums import ParseMode
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from pyrogram.errors import FloodWait, UserIsBlocked, InputUserDeactivated
 from bot import Bot
-from config import ADMINS, FORCE_MSG, START_MSG, CUSTOM_CAPTION, DISABLE_CHANNEL_BUTTON, PROTECT_CONTENT, FILE_AUTO_DELETE
+from config import ADMINS, FORCE_MSG, START_PIC, START_MSG, CUSTOM_CAPTION, DISABLE_CHANNEL_BUTTON, PROTECT_CONTENT, FILE_AUTO_DELETE
 from helper_func import subscribed, encode, decode, get_messages
 from database.database import add_user, del_user, full_userbase, present_user
 
@@ -106,23 +106,41 @@ async def start_command(client: Client, message: Message):
         reply_markup = InlineKeyboardMarkup(
             [
                 [
-                    InlineKeyboardButton("😊 About Me", callback_data = "about"),
-                    InlineKeyboardButton("🔒 Close", callback_data = "close")
+                    InlineKeyboardButton("New Movies", url='https://t.me/+PBjAJrqhF11hZjg1'),
+                    InlineKeyboardButton("Latest Movies", url='https://t.me/+0dMvhpBQnqpkNTU1')
+                ],
+                [
+                    InlineKeyboardButton("Back Up", url='https://t.me/+34rTWspWgfI3OGQ9'),
+                    InlineKeyboardButton("Adult Movies", url='https://t.me/Adults_Corner_Arc')
                 ]
             ]
         )
-        await message.reply_text(
-            text = START_MSG.format(
-                first = message.from_user.first_name,
-                last = message.from_user.last_name,
-                username = None if not message.from_user.username else '@' + message.from_user.username,
-                mention = message.from_user.mention,
-                id = message.from_user.id
-            ),
-            reply_markup = reply_markup,
-            disable_web_page_preview = True,
-            quote = True
-        )
+        if START_PIC:  # Check if START_PIC has a value
+            await message.reply_photo(
+                photo = START_PIC,
+                caption = START_MSG.format(
+                    first = message.from_user.first_name,
+                    last = message.from_user.last_name,
+                    username = None if not message.from_user.username else '@' + message.from_user.username,
+                    mention = message.from_user.mention,
+                    id = message.from_user.id
+                ),
+                reply_markup = reply_markup,
+                quote = True
+            )
+        else:  # If START_PIC is empty, send only the text
+            await message.reply_text(
+                text = START_MSG.format(
+                    first = message.from_user.first_name,
+                    last = message.from_user.last_name,
+                    username = None if not message.from_user.username else '@' + message.from_user.username,
+                    mention = message.from_user.mention,
+                    id = message.from_user.id
+                ),
+                reply_markup = reply_markup,
+                disable_web_page_preview = True,
+                quote = True
+            )
         return
 
     
@@ -143,21 +161,20 @@ async def not_joined(client: Client, message: Message):
             InlineKeyboardButton(text="Join Channel 4", url=client.invitelink4),
         ]
     ]
-    try:
+    if len(message.command) > 1:  # Check if there's more than one element (command and argument) 
         buttons.append(
             [
-                InlineKeyboardButton(
-                    text = 'Try Again',
-                    url = f"https://t.me/{client.username}?start={message.command[1]}"
-                )
+                InlineKeyboardButton(text="♻️ Try Again ♻️", url=f"https://t.me/{client.username}?start={message.command[1]}")
             ]
         )
-    except IndexError:
+    
+    else:
         pass
-
-
-    await message.reply(
-        text = FORCE_MSG.format(
+        buttons.append([InlineKeyboardButton(text="♻️ Try Again ♻️", url=f"https://t.me/{client.username}?start")]) #Default Start button
+        
+    await message.reply_photo(
+        photo = START_PIC,
+        caption = FORCE_MSG.format(
                 first = message.from_user.first_name,
                 last = message.from_user.last_name,
                 username = None if not message.from_user.username else '@' + message.from_user.username,
@@ -166,9 +183,7 @@ async def not_joined(client: Client, message: Message):
             ),
         reply_markup = InlineKeyboardMarkup(buttons),
         quote = True,
-        disable_web_page_preview = True
     )
-
 
 
 @Bot.on_message(filters.command('users') & filters.private & filters.user(ADMINS))
